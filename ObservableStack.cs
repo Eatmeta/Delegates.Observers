@@ -12,7 +12,7 @@ namespace Delegates.Observers
 			_log.Append(message);
 		}
 		
-		public void SubscribeOn(Observable observer)
+		public void SubscribeOn(IObservable observer)
 		{
 			observer.Notify += Update;
 		}
@@ -23,17 +23,17 @@ namespace Delegates.Observers
 		}
 	}
 
-	public abstract class Observable
+	public interface IObservable
 	{
-		public delegate void ObserverHandler(string message);
-		public abstract event ObserverHandler Notify;
+		delegate void ObserverHandler(string message);
+		event ObserverHandler Notify;
 	}
 
-	public class ObservableStack<T> : Observable
+	public class ObservableStack<T> : IObservable
 	{
 		private readonly Stack<T> _stack = new Stack<T>();
 
-		public override event ObserverHandler Notify;
+		public event IObservable.ObserverHandler Notify;
 
 		public void Push(T obj)
 		{
