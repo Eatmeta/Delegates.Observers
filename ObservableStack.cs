@@ -1,86 +1,51 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace Delegates.Observers
 {
-
 	public class StackOperationsLogger
 	{
-		private readonly Observer _observer = new Observer();
-		public void SubscribeOn<T>(ObservableStack<T> stack)
+		private readonly StringBuilder _log  = new StringBuilder();
+
+		private void Update(string message)
 		{
-			stack.Add(_observer);
+			_log.Append(message);
+		}
+		
+		public void SubscribeOn(Observable observer)
+		{
+			observer.Notify += Update;
 		}
 
 		public string GetLog()
 		{
-			return _observer.Log.ToString();
+			return _log.ToString();
 		}
 	}
 
-	public interface IObserver
+	public abstract class Observable
 	{
-		void HandleEvent(object eventData);
+		public delegate void ObserverHandler(string message);
+		public abstract event ObserverHandler Notify;
 	}
 
-	public class Observer : IObserver
+	public class ObservableStack<T> : Observable
 	{
-		public StringBuilder Log = new StringBuilder();
+		private readonly Stack<T> _stack = new Stack<T>();
 
-		public void HandleEvent(object eventData)
-		{
-			Log.Append(eventData);
-		}
-	}
-
-	public interface IObservable
-	{
-		void Add(IObserver observer);
-		void Remove(IObserver observer);
-		void Notify(object eventData);
-	}
-
-
-	public class ObservableStack<T> : IObservable
-	{
-		private readonly List<IObserver> _observers = new List<IObserver>();
-
-		public void Add(IObserver observer)
-		{
-			_observers.Add(observer);
-		}
-
-		public void Notify(object eventData)
-		{
-			foreach (var observer in _observers)
-				observer.HandleEvent(eventData);
-		}
-
-		public void Remove(IObserver observer)
-		{
-			_observers.Remove(observer);
-		}
-
-		private readonly List<T> _data = new List<T>();
+		public override event ObserverHandler Notify;
 
 		public void Push(T obj)
 		{
-			_data.Add(obj);
-			Notify(new StackEventData<T> { IsPushed = true, Value = obj });
+			_stack.Push(obj);
+			Notify?.Invoke("+" + obj);
 		}
 
 		public T Pop()
 		{
-			if (_data.Count == 0)
-				throw new InvalidOperationException();
-			var result = _data[_data.Count - 1];
-			Notify(new StackEventData<T> { IsPushed = false, Value = result });
-			return result;
-
+			var item = _stack.Pop();
+			Notify?.Invoke("-" + item);
+			return item;
 		}
 	}
 }
